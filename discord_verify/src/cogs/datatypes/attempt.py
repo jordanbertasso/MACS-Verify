@@ -1,22 +1,26 @@
 from __future__ import annotations
-from cogs.datatypes.email_address import Email
-from cerberus import Validator
-from datetime import datetime
+
 import copy
+from datetime import datetime
+from typing import Dict
+
+from cerberus import Validator  # type: ignore
+
+from .email_address import Email
 
 
 class Attempt:
     guild_id: str
     verification_code: str
     attempt_time: str
+    status: str
     email: Email
 
-    def __init__(
-            self,
-            verification_code: str,
-            guild_id: str,
-            email: Email,
-            attempt_time="") -> Attempt:
+    def __init__(self,
+                 verification_code: str,
+                 guild_id: str,
+                 email: Email,
+                 attempt_time: str = ""):
         if Attempt.is_valid(verification_code, guild_id):
             self.guild_id = guild_id
             self.verification_code = verification_code
@@ -28,16 +32,16 @@ class Attempt:
                 self.attempt_time = str(datetime.now())
 
     @staticmethod
-    def to_dict(attempt: Attempt) -> str:
+    def to_dict(attempt: Attempt) -> Dict:
         attempt_copy = copy.deepcopy(attempt)
 
         if attempt_copy.email:
-            attempt_copy.email = attempt_copy.email.address
+            attempt_copy.email = attempt_copy.email.address  # type: ignore
 
         return vars(attempt_copy)
 
     @staticmethod
-    def is_valid(verification_code: str, guild_id: str) -> None:
+    def is_valid(verification_code: str, guild_id: str) -> bool:
         attempt_details = {
             "verification_code": verification_code,
             "guild_id": guild_id

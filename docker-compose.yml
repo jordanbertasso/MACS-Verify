@@ -4,7 +4,7 @@ services:
     bot:
         container_name: macs-verify-bot
         build:
-            context: ./discord-verify
+            context: ./discord_verify
             dockerfile: Dockerfile
         restart: always
         environment:

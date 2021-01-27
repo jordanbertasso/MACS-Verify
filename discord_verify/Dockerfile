@@ -11,4 +11,4 @@ COPY . .
 ENV AWS_CONFIG_FILE=./aws/config
 ENV AWS_SHARED_CREDENTIALS_FILE=./aws/credentials
 
-CMD ["python", "src/bot.py"]
+CMD ["python", "-m", "src.bot"]

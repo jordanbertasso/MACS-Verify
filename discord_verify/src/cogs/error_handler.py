@@ -1,23 +1,19 @@
-import discord
-import traceback
 import sys
-from discord.ext import commands
+import traceback
+
+import discord  # type: ignore
+from discord.ext import commands  # type: ignore
 
 
 class CommandErrorHandler(commands.Cog):
-
-    def __init__(self, bot):
-        self.bot = bot
-
     @commands.Cog.listener()
-    async def on_command_error(self, ctx, error):
+    async def on_command_error(self, ctx: commands.Context,
+                               error: commands.CommandError):
         """The event triggered when an error is raised while invoking a command.
-        Parameters
-        ------------
-        ctx: commands.Context
-            The context used for command invocation.
-        error: commands.CommandError
-            The Exception raised.
+
+        Args:
+            ctx (commands.Context): The context used for command invocation.
+            error (commands.CommandError): The Exception raised.
         """
         if hasattr(ctx.command, 'on_error'):
             return
@@ -38,19 +34,23 @@ class CommandErrorHandler(commands.Cog):
 
         elif isinstance(error, commands.NoPrivateMessage):
             try:
-                await ctx.author.send(f'{ctx.command} can not be used in Private Messages.')
+                await ctx.author.send(
+                    f'{ctx.command} can not be used in Private Messages.')
             except discord.HTTPException:
                 pass
 
         elif isinstance(error, commands.BadArgument):
             if ctx.command.qualified_name == 'tag list':
-                await ctx.send('I could not find that member. Please try again.')
+                await ctx.send(
+                    'I could not find that member. Please try again.')
 
         else:
-            print('Ignoring exception in command {}:'.format(
-                ctx.command), file=sys.stderr)
-            traceback.print_exception(
-                type(error), error, error.__traceback__, file=sys.stderr)
+            print('Ignoring exception in command {}:'.format(ctx.command),
+                  file=sys.stderr)
+            traceback.print_exception(type(error),
+                                      error,
+                                      error.__traceback__,
+                                      file=sys.stderr)
 
 
 def setup(bot):

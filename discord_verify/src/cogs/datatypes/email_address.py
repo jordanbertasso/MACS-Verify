@@ -1,10 +1,14 @@
-from cogs.util.config import CONFIG
-from cerberus import Validator
 from smtplib import SMTP
+from typing import Tuple
+
+from cerberus import Validator  # type: ignore
 from requests import post
-from logger import get_logger
+
+from ...logger import get_logger
+from ..util.config import CONFIG
 
 logger = get_logger(__name__)
+
 
 class Email:
     def __init__(self, address: str):
@@ -14,7 +18,7 @@ class Email:
             self.address = address
 
     @staticmethod
-    def validate(address: str) -> (bool, str):
+    def validate(address: str) -> Tuple[bool, str]:
 
         valid_regex = CONFIG["DEFAULT"]["valid_email_regex"]
         invalid_regex = CONFIG["DEFAULT"]["invalid_email_regex"]
@@ -68,8 +72,11 @@ class Email:
         last_name = split[1]
 
         url = CONFIG["DEFAULT"]["staff_search_url"]
-        request_json = {"search_by_name": True,
-                        "search_by_position": False, "search_term": f"{first_name} {last_name}"}
+        request_json = {
+            "search_by_name": True,
+            "search_by_position": False,
+            "search_term": f"{first_name} {last_name}"
+        }
         res = post(url, json=request_json)
 
         staff_members = res.json()["staff"]

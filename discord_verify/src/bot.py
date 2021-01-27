@@ -1,14 +1,16 @@
 from __future__ import annotations
-from discord.ext import commands
-from discord import Game, Status, ChannelType
-from cogs.util.config import CONFIG
-from logger import get_logger
-import discord
 
+from discord import ChannelType, Game, Status  # type: ignore
+from discord.ext import commands  # type: ignore
+from discord.flags import Intents  # type: ignore
+
+from .cogs import admin, error_handler, verify
+from .cogs.util.config import CONFIG
+from .logger import get_logger
 
 logger = get_logger(__name__)
 
-bot = commands.Bot(CONFIG["DEFAULT"]["command_prefix"])
+bot = commands.Bot(CONFIG["DEFAULT"]["command_prefix"], intents=Intents.all())
 
 
 @bot.event
@@ -18,7 +20,7 @@ async def on_ready():
     await bot.change_presence(status=Status.online, activity=game)
 
 
-bot.load_extension("cogs.admin")
-bot.load_extension("cogs.verify")
-bot.load_extension("cogs.error_handler")
+bot.add_cog(admin.Admin())
+bot.add_cog(verify.Verify(bot))
+bot.add_cog(error_handler.CommandErrorHandler())
 bot.run(CONFIG["DEFAULT"]["discord_token"])

@@ -1,12 +1,17 @@
 from __future__ import annotations
-from cogs.util.config import CONFIG
-from cogs.datatypes.email_address import Email
-from cogs.datatypes.user import User
-from cogs.datatypes.attempt import Attempt
+
 from os import environ
-from pymongo import MongoClient
-from logger import get_logger
-import discord
+from typing import Dict, List, Optional, Union
+
+# import discord  # type: ignore
+from discord import Guild, Member  # type: ignore
+from pymongo import MongoClient  # type: ignore
+
+from ...logger import get_logger
+from ..datatypes.attempt import Attempt
+from ..datatypes.email_address import Email
+from ..datatypes.user import User
+from ..util.config import CONFIG
 
 logger = get_logger(__name__)
 logger.info("Waiting for DB connection.")
@@ -31,8 +36,7 @@ def set_exec_role(guild_id: str, role_id: str) -> bool:
     if existing_role_id:
         return False
     else:
-        collection.insert_one(
-            {'_id': 'exec_role_id', 'id': str(role_id)})
+        collection.insert_one({'_id': 'exec_role_id', 'id': str(role_id)})
         return True
 
 
@@ -55,8 +59,10 @@ def set_verify_channel(guild_id: str, channel_id: str) -> bool:
     if existing_channel_id:
         return False
     else:
-        collection.insert_one(
-            {'_id': 'verify_channel_id', 'id': str(channel_id)})
+        collection.insert_one({
+            '_id': 'verify_channel_id',
+            'id': str(channel_id)
+        })
         return True
 
 
@@ -92,7 +98,7 @@ def get_verified_role_id(guild_id: str) -> str:
         return ""
 
 
-def get_waiting_user_details(user_id: str) -> dict or None:
+def get_waiting_user_details(user_id: str) -> Optional[Dict]:
     waiting_user = waiting_collection.find_one({"user_id": user_id})
 
     return waiting_user
@@ -112,34 +118,42 @@ def save_user(user: User, guild_id: str) -> None:
 def delete_user(user_id: str, guild_id: str) -> None:
     collection = db.get_collection(str(guild_id))
     collection.delete_one({"user_id": user_id})
-    collection.delete_one({"_id": "guild_emails", "emails": {
-        "$elemMatch": {"user_id":
-                       {"$eq": user_id}}}})
+    collection.delete_one({
+        "_id": "guild_emails",
+        "emails": {
+            "$elemMatch": {
+                "user_id": {
+                    "$eq": user_id
+                }
+            }
+        }
+    })
 
 
 def add_to_waiting(user: User, guild_id: str) -> None:
     waiting_user = waiting_collection.find_one({"user_id": user.user_id})
 
     if not waiting_user:
-        waiting_collection.insert_one(
-            {
-                "user_id": user.user_id,
-                "guild_id": guild_id,
-                "name": user.name,
-                "discriminator": user.discriminator})
+        waiting_collection.insert_one({
+            "user_id": user.user_id,
+            "guild_id": guild_id,
+            "name": user.name,
+            "discriminator": user.discriminator
+        })
     else:
-        waiting_collection.replace_one({"user_id": user.user_id},
-                                       {"user_id": user.user_id,
-                                        "guild_id": guild_id,
-                                        "name": user.name,
-                                        "discriminator": user.discriminator})
+        waiting_collection.replace_one({"user_id": user.user_id}, {
+            "user_id": user.user_id,
+            "guild_id": guild_id,
+            "name": user.name,
+            "discriminator": user.discriminator
+        })
 
 
 def remove_from_waiting(user_id: str) -> None:
     waiting_collection.delete_one({"user_id": user_id})
 
 
-def get_user(user_id: str, guild_id="", user_details={}) -> User or None:
+def get_user(user_id: str, guild_id="", user_details={}) -> Optional[User]:
     user_dict = {}
 
     if guild_id:
@@ -153,24 +167,23 @@ def get_user(user_id: str, guild_id="", user_details={}) -> User or None:
             user_dict = guild_collection.find_one({"user_id": user_id})
 
     if user_dict:
-        user: User = initialise_user_from_dict(user_dict)
-        return user
+        return initialise_user_from_dict(user_dict)
     else:
-        # If the user didn't exist in the db, create a new one
-        return initialise_user_from_dict(user_details)
+        return None
 
 
-def get_user_raw(user_id: str, guild_id: str) -> dict or None:
+def create_user(user_id: str, guild_id="", user_details={}) -> User:
+    return initialise_user_from_dict(user_details)
+
+
+def get_user_raw(user_id: str, guild_id: str) -> Optional[Dict]:
     collection = db.get_collection(str(guild_id))
     return collection.find_one({"user_id": user_id})
 
 
-def initialise_user_from_dict(user_dict: dict) -> User or None:
-    if not user_dict:
-        return None
-
+def initialise_user_from_dict(user_dict: dict) -> User:
     try:
-        attempts_dicts: [dict] = user_dict["attempts"]
+        attempts_dicts: List[Dict] = user_dict["attempts"]
         attempts = []
         for attempt_dict in attempts_dicts:
             verification_code: str = attempt_dict["verification_code"]
@@ -178,74 +191,71 @@ def initialise_user_from_dict(user_dict: dict) -> User or None:
             email: str = attempt_dict["email"]
             attempt_time: str = attempt_dict["attempt_time"]
 
-            attempt: Attempt = Attempt(
-                verification_code, guild_id, email=Email(email), attempt_time=attempt_time)
+            attempt: Attempt = Attempt(verification_code,
+                                       guild_id,
+                                       email=Email(email),
+                                       attempt_time=attempt_time)
 
             attempts.append(attempt)
 
-        return User(
-            user_dict["user_id"],
-            user_dict["name"],
-            user_dict["discriminator"],
-            user_dict["status"],
-            attempts=attempts)
+        return User(user_dict["user_id"],
+                    user_dict["name"],
+                    user_dict["discriminator"],
+                    user_dict["status"],
+                    attempts=attempts)
     except KeyError:
         logger.info("User has no current attempts")
 
-    return User(
-        user_dict["user_id"],
-        user_dict["name"],
-        user_dict["discriminator"],
-        user_dict["status"]
-    )
+    return User(user_dict["user_id"], user_dict["name"],
+                user_dict["discriminator"], user_dict["status"])
 
 
-def get_verified_attempt(
-        user_id: str,
-        guild_id: str,
-        verification_code: str) -> Attempt:
+def get_verified_attempt(user_id: str, guild_id: str,
+                         verification_code: str) -> Optional[Attempt]:
     guild_collection = db.get_collection(str(guild_id))
     target = {
         "user_id": user_id,
         "attempts": {
             "$elemMatch": {
-                "verification_code": verification_code}}}
+                "verification_code": verification_code
+            }
+        }
+    }
     verified_user_dict = guild_collection.find_one(target)
 
     if verified_user_dict:
-        attempts_dicts: [dict] = verified_user_dict["attempts"]
+        attempts_dicts: List[Dict] = verified_user_dict["attempts"]
 
         attempts = []
         for attempt_dict in attempts_dicts:
-            verification_code: str = attempt_dict["verification_code"]
-            guild_id: str = attempt_dict["guild_id"]
+            verification_code = attempt_dict["verification_code"]
+            guild_id = attempt_dict["guild_id"]
             email_address: str = attempt_dict["email"]
-            attempts.append(Attempt(verification_code,
-                                    guild_id, Email(email_address)))
+            attempts.append(
+                Attempt(verification_code, guild_id, Email(email_address)))
 
         for attempt in attempts:
             if attempt.verification_code == verification_code:
                 return attempt
 
+    return None
 
-def get_verified_members(guild: discord.Guild) -> [{"member": discord.Member, "email": str}]:
+
+def get_verified_members(
+        guild: Guild) -> Optional[List[Dict[str, Union[Member, str]]]]:
     guild_collection = db.get_collection(str(guild.id))
     existing_emails = guild_collection.find_one({"_id": "guild_emails"})
     if existing_emails:
-        # existing_ids = [entry["user_id"]
-        #                 for entry in existing_emails["emails"]]
-
         res = []
         for d in existing_emails["emails"]:
-            user_id = d["user_id"]
-            email = d["email"]
-            member = guild.get_member(int(user_id))
-            res.append({
-                "member": member,
-                "email": email
-            })
+            user_id: str = d["user_id"]
+            email: str = d["email"]
+            member: Member = guild.get_member(int(user_id))
+            res.append({"member": member, "email": email})
 
         return res
+    else:
+        return []
 
 
 def add_verified_email(user_id: str, email: Email, guild_id: str) -> None:
@@ -254,24 +264,32 @@ def add_verified_email(user_id: str, email: Email, guild_id: str) -> None:
 
     if existing_emails:
         existing_emails = existing_emails["emails"]
-        existing_emails.append({
-            "user_id": user_id,
-            "email": email.address
-        })
+        existing_emails.append({"user_id": user_id, "email": email.address})
         guild_collection.replace_one({"_id": "guild_emails"}, {
-                                     "_id": "guild_emails",
-                                     "emails": existing_emails})
+            "_id": "guild_emails",
+            "emails": existing_emails
+        })
     else:
-        guild_collection.insert_one({"_id": "guild_emails", "emails": [{
-            "user_id": user_id,
-            "email": email.address
-        }]})
+        guild_collection.insert_one({
+            "_id":
+            "guild_emails",
+            "emails": [{
+                "user_id": user_id,
+                "email": email.address
+            }]
+        })
 
 
 def email_exists_in_guild(email: Email, guild_id: str):
     guild_collection = db.get_collection(str(guild_id))
-    match = guild_collection.find_one({"_id": "guild_emails", "emails": {
-        "$elemMatch": {"email": email.address}}})
+    match = guild_collection.find_one({
+        "_id": "guild_emails",
+        "emails": {
+            "$elemMatch": {
+                "email": email.address
+            }
+        }
+    })
 
     if match:
         return True

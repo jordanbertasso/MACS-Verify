@@ -1,11 +1,15 @@
 from __future__ import annotations
-from cerberus import Validator, TypeDefinition
-from cogs.datatypes.attempt import Attempt
-import datetime
+
 import copy
+import datetime
+from typing import Dict, List, Optional, Tuple
+
+from cerberus import TypeDefinition, Validator  # type: ignore
+
+from .attempt import Attempt
 
 # Define a custom attempt type for cerberus validatio
-attempt_type = TypeDefinition("attempt", (Attempt,), ())
+attempt_type = TypeDefinition("attempt", (Attempt, ), ())
 Validator.types_mapping["attempt"] = attempt_type
 
 
@@ -14,15 +18,14 @@ class User:
     name: str
     discriminator: str
     status: str
-    attempts: [Attempt]
+    attempts: List[Attempt]
 
-    def __init__(
-            self,
-            user_id: str,
-            name: str,
-            discriminator: str,
-            status: str,
-            attempts: list = []) -> User:
+    def __init__(self,
+                 user_id: str,
+                 name: str,
+                 discriminator: str,
+                 status: str,
+                 attempts: list = []):
 
         user_details = {
             "user_id": user_id,
@@ -39,21 +42,23 @@ class User:
             self.status = user_details["status"]
 
         if attempts:
-            self.attempts: [Attempt] = attempts
+            self.attempts: List[Attempt] = attempts
         else:
-            self.attempts: [Attempt] = []
+            self.attempts: List[Attempt] = []
 
     @staticmethod
-    def to_dict(user: User) -> str:
+    def to_dict(user: User) -> Dict:
         user_copy = copy.deepcopy(user)
         if user_copy.attempts:
-            user_copy.attempts = [Attempt.to_dict(
-                attempt) for attempt in user_copy.attempts]
+            user_copy.attempts = [
+                Attempt.to_dict(  # type: ignore
+                    attempt) for attempt in user_copy.attempts
+            ]
 
         return vars(user_copy)
 
     @staticmethod
-    def validate(user_details: dict) -> (bool, dict):
+    def validate(user_details: dict) -> Tuple[bool, Dict]:
 
         schema = {
             "user_id": {
@@ -88,7 +93,7 @@ class User:
     def add_attempt(self, attempt: Attempt) -> None:
         self.attempts.append(attempt)
 
-    def get_earliest_attempt(self) -> Attempt or None:
+    def get_earliest_attempt(self) -> Optional[Attempt]:
         earliest_attempt = None
         earliest_time = datetime.datetime.max
 
@@ -102,7 +107,7 @@ class User:
 
         return earliest_attempt
 
-    def get_latest_attempt(self) -> Attempt or None:
+    def get_latest_attempt(self) -> Optional[Attempt]:
         latest_attempt = None
         latest_time = datetime.datetime.min
 
@@ -123,3 +128,5 @@ class User:
                 return True
             else:
                 return False
+
+        return False
