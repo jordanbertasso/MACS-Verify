@@ -4,6 +4,7 @@ discord_secrets.ini
 discord.log
 db
 backups/*
+terraform/.terraform
 
 # ---> Python
 # Byte-compiled / optimized / DLL files

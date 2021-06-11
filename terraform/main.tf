@@ -1,7 +1,8 @@
 resource "aws_instance" "verifyInstance" {
-  ami           = "ami-0d2fb06f3c1484132"
-  instance_type = "t2.small"
-  user_data     = <<-EOF
+  ami                  = "ami-0d2fb06f3c1484132"
+  instance_type        = "t2.small"
+  iam_instance_profile = aws_iam_instance_profile.verify_profile.name
+  user_data            = <<-EOF
                         #!/bin/bash
                         sudo su
                         amazon-linux-extras install docker
@@ -18,14 +19,25 @@ resource "aws_instance" "verifyInstance" {
                   EOF
 }
 
-output "DNS" {
-  value = aws_instance.verifyInstance.public_dns
+resource "aws_iam_role" "ses_role" {
+  name                = "SES"
+  managed_policy_arns = ["arn:aws:iam::aws:policy/AmazonSESFullAccess"]
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      },
+    ]
+  })
 }
 
-output "INSTANCE_ID" {
-  value = aws_instance.verifyInstance.id
-}
-
-output "AVAILABILITY_ZONE" {
-  value = aws_instance.verifyInstance.availability_zone
+resource "aws_iam_instance_profile" "verify_profile" {
+  name = "verify_profile"
+  role = aws_iam_role.ses_role.name
 }

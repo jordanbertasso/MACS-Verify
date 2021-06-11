@@ -55,6 +55,11 @@ class Email:
 
     @staticmethod
     def student_address_exists(email_address: str) -> bool:
+
+        # AWS blocks outbound port 25 and requires a request to open it up
+        if CONFIG['DEFAULT']['aws_instance']:
+            return True
+
         smtp = SMTP(CONFIG["DEFAULT"]["student_mail_server"])
         smtp.ehlo()
         smtp.docmd("MAIL", "FROM:<>")
