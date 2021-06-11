@@ -4,7 +4,7 @@ Custom Discord bot used to verify students and staff on the MACS Discord server
 
 ## Requirements
 * Discord members intent enabled
-* Amazon Simple Email Service (SES) API to be configured with Access Key
+* Amazon Simple Email Service (SES) API to be configured with Access Key (if not using the terraform method)
 
 ## Usage
 1. Place AWS [credential and config](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html#configuration) file in `discord_verify/aws/crentials` and `discord_verify/aws/config`
