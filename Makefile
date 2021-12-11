@@ -1,6 +1,6 @@
 .PHONY: run
 run:
-	cd discord_verify ; env PYTHONIOENCODING=UTF-8 PYTHONUNBUFFERED=1 \
+	cd discord-verify ; env PYTHONIOENCODING=UTF-8 PYTHONUNBUFFERED=1 \
 	AWS_CONFIG_FILE=./aws/config \
 	AWS_SHARED_CREDENTIALS_FILE=./aws/credentials \
 	DB_HOST=localhost \

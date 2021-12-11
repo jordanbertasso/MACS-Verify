@@ -7,8 +7,8 @@ Custom Discord bot used to verify students and staff on the MACS Discord server
 * Amazon Simple Email Service (SES) API to be configured with Access Key (if not using the terraform method)
 
 ## Usage
-1. Place AWS [credential and config](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html#configuration) file in `discord_verify/aws/crentials` and `discord_verify/aws/config`
-2. Edit `discord_verify/discord_secrets.ini` and add your discord bot token
+1. Place AWS [credential and config](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/quickstart.html#configuration) file in `discord-verify/aws/crentials` and `discord-verify/aws/config`
+2. Edit `discord-verify/discord_secrets.ini` and add your discord bot token
 ```
 [DEFAULT]
 discord_token = <DISCORD_BOT_TOKEN>
@@ -28,4 +28,4 @@ aws ec2-instance-connect send-ssh-public-key \
 
 ssh ec2-user@<INSTANCE_DNS>
 ```
-Then configure as specified in Usage and set `aws_instance = True` in `discord_verify/config.ini`
+Then configure as specified in Usage and set `aws_instance = True` in `discord-verify/config.ini`
